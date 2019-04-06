@@ -10,7 +10,7 @@ if sys.version_info >= (3, 0):  # pragma: no cover
 
 
 def is_extra_data(data):
-    if ord(data[1]) == 32:
+    if data[1] == 32:
         return True
     return False
 
@@ -33,7 +33,7 @@ def bits(bytes):
     bit_list = []
     # print(''.join(map(chr, bin(bits_list[0] & bits_list[1]), 2)))
     for i in range(8, -1, -1):
-        bit_list.append(str((ord(bin(bits_list[0] & bits_list[1])) >> i) & 1))
+        bit_list.append(str(((bin(bits_list[0] & bits_list[1])) >> i) & 1))
     return value
 
 
@@ -49,11 +49,11 @@ def get_level(data, bits, verbose=False):
         level <<= 1
         b = (bits[i] // 8) + 1
         o = bits[i] % 8
-        bit_list.append(str(ord(data[b]) >> o & 1))
+        bit_list.append(str((data[b]) >> o & 1))
         if sys.version_info >= (3, 0):
             level |= (data[b] >> o) & 1
         else:
-            level |= (ord(data[b]) >> o) & 1
+            level |= ((data[b]) >> o) & 1
             # print(level)
     # print(bit_list)
     # whole_bits = list(reversed(bit_list[0:7]))
@@ -486,3 +486,4 @@ def writer_task_to_line(next_task):
         af3_value=next_task.data['AF3']['value'], af3_quality=next_task.data['AF3']['quality'],
         x_value=next_task.data['X']['value'], y_value=next_task.data['Y']['value'],
         z_value=next_task.data['Z']['value'])
+

@@ -122,11 +122,11 @@ class EmotivCrypto:
         # Create and return new AES class, using the serial number and headset version.
         if self.serial_number.startswith('UD2016') and not self.force_old_crypto:
             if self.force_epoc_mode:
-                return AES.new(epoc_plus_crypto_key(self.serial_number), AES.MODE_ECB, iv)
+                return AES.new(epoc_plus_crypto_key(self.serial_number), AES.MODE_ECB)
             else:
                 return AES.new(new_crypto_key(self.serial_number, self.verbose))
         else:
-            return AES.new(crypto_key(self.serial_number, self.is_research, verbose), AES.MODE_ECB, iv)
+            return AES.new(crypto_key(self.serial_number, self.is_research, verbose), AES.MODE_ECB)
 
     def add_task(self, data):
         """
