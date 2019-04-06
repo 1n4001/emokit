@@ -58,7 +58,7 @@ Required Libraries
 Python
 ------
 
-* pycrypto - https://www.dlitz.net/software/pycrypto/
+* pycrypto - https://www.dlitz.net/software/pycrypto/ (e.g., pip install pycrypto==2.6.1)
 
 2.x
 * future - pip install future
