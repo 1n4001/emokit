@@ -13,7 +13,6 @@ import pandas
 import signal
 import numpy as np
 
-global sharedObject;
 sharedObject = dict()
 sharedObject["sensors"] = dict()
 
@@ -49,7 +48,6 @@ sharedObject["dft"]["AF4"] = [0] * 64
 sharedObject["dft"]["FC6"] = [0] * 64
 sharedObject["dft"]["F4"] = [0] * 64
 
-global rawData
 rawData = dict()
 rawData["F3"] = [0] * 128
 rawData["FC5"] = [0] * 128
@@ -66,18 +64,20 @@ rawData["AF4"] = [0] * 128
 rawData["FC6"] = [0] * 128
 rawData["F4"] = [0] * 128
 
-global signalNames
+sendRawArray = False
 signalNames = ("F3", "FC5", "AF3", "F7", "T7", "P7", "O1", "O2", "P8", "T8", "F8", "AF4", "FC6", "F4")
-
+running = True
 
 def runDFT(signalName, rawData, results):
     y = rawData[signalName]
     N = len(y)
-    Y_k = np.fft.fft(y)[0:int(N / 2)] / 8192  # FFT function from numpy
+    Y_k = np.fft.fft(y)[0:int(N / 2)] / N  # FFT function from numpy
     Y_k[1:] = 2 * Y_k[1:]  # need to take the single-sided spectrum only
     Pxx = np.abs(Y_k)  # be sure to get rid of imaginary part
-    print(Pxx)
+    Pxx[0] = 0
+    # print(Pxx)
     results[signalName] = Pxx.tolist()
+
 
 class RequestHandler(BaseHTTPRequestHandler):
     def do_HEAD(self):
@@ -99,13 +99,21 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.respond({'status': 500})
 
     def handle_http(self, status_code, path):
+        global sendRawArray
         self.send_response(status_code)
         self.send_header('Content-type', 'application/json')
         self.end_headers()
         if len(path) > 1:
             sensorName = path[1:]
             runDFT(sensorName, rawData, sharedObject["dft"])
-            response = "{}".format(json.JSONEncoder().encode(sharedObject["dft"][sensorName]))
+            # if sharedObject["dft"][sensorName][5] > 0.18:
+            #     print("5Hz detect > threshold: "+str(sharedObject["dft"][sensorName][5]))
+
+            if sendRawArray:
+                response = "{}".format(json.JSONEncoder().encode(sharedObject["dft"][sensorName]))
+            else:
+                dft = {"name": sensorName, "values": sharedObject["dft"][sensorName]}
+                response = "{}".format(json.JSONEncoder().encode(dft))
         else:
             response = "{}".format(json.JSONEncoder().encode(sharedObject["sensors"]))
         return bytes(response, 'UTF-8')
@@ -113,9 +121,6 @@ class RequestHandler(BaseHTTPRequestHandler):
     def respond(self, opts):
         response = self.handle_http(opts['status'], self.path)
         self.wfile.write(response)
-
-
-running = True
 
 
 def emoPollingWorker(sharedObject):
@@ -145,12 +150,12 @@ def csvPollingWorker(sharedData, csv):
 
         for name in signalNames:
             rawData[name].pop(9)
-            rawData[name].append(row[name])
+            rawData[name].append((row[name]-4096)/4096.0)
 
         index += 1
         if index >= max:
             index = 0
-        time.sleep(0.01)
+        time.sleep(1/128.0)
 
 
 def signal_handler(sig, frame):
